@@ -8,8 +8,8 @@ from statsmodels.tsa.arima.model import ARIMA
 import matplotlib.pyplot as plt
 
 # Set up page configuration
-st.set_page_config(page_title="Survei Nutrisi Harian", layout="centered")
-st.title("📝 Survei Nutrisi Harian")
+st.set_page_config(page_title="EatWise", layout="centered")
+st.title("📝 EatWiseEveryday")
 
 tab1, tab2, tab3 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori"])
 
