@@ -31,7 +31,7 @@ generation_config = {
   "max_output_tokens": 1024,
 }
 
-tab1, tab2, tab3, tab4 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori", "📷 Find Calories"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori", "📷 Find Calories", "📷 Find Calories"])
 
 filename = "data_survei_nutrisi.csv"
 
@@ -319,3 +319,32 @@ with tab4:
             st.success("Thanks for visiting 🤩!!")
             st.info("Upload another image if you'd like to try again 😄!")
 
+with tab5:
+    
+    st.title("Camera Calories 🔍")
+    
+    disclaimer_message = """This is a object detector model so preferably use images containing different objects,tools... for best results 🙂"""
+
+    # Hide the disclaimer initially
+    st.write("")
+
+    enable = st.checkbox("Enable camera")
+    picture = st.camera_input("Take a picture", disabled=not enable)
+
+    if picture:
+        st.image(picture)
+
+    image = Image.open(picture)
+
+    if st.button("Identify the objects"):
+        st.success("Analyzing image...")
+        vision_model = genai.GenerativeModel('gemini-1.5-flash')
+        response = vision_model.generate_content([
+            "From the image, list all recognizable food items along with an estimated calorie count for a typical serving. Format the result as a table with two columns: Food Item and Estimated Calories.",
+            image
+        ])
+        
+        st.write("### Food Items and Estimated Calories:")
+        st.markdown(response.text)
+        st.success("Thanks for visiting 🤩!!")
+        st.info("Upload another image if you'd like to try again 😄!")
