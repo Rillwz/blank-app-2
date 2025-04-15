@@ -320,31 +320,25 @@ with tab4:
             st.info("Upload another image if you'd like to try again 😄!")
 
 with tab5:
-    
     st.title("Camera Calories 🔍")
-    
-    disclaimer_message = """This is a object detector model so preferably use images containing different objects,tools... for best results 🙂"""
-
-    # Hide the disclaimer initially
-    st.write("")
 
     enable = st.checkbox("Enable camera")
     picture = st.camera_input("Take a picture", disabled=not enable)
 
-    if picture:
-        st.image(picture)
+    if picture is not None:
+        image = Image.open(picture)
 
-    image = Image.open(picture)
+        if st.button("Identify the objects"):
+            st.success("Analyzing image...")
+            vision_model = genai.GenerativeModel('gemini-1.5-flash')
+            response = vision_model.generate_content([
+                "From the image, list all recognizable food items along with an estimated calorie count for a typical serving. Format the result as a table with two columns: Food Item and Estimated Calories.",
+                image
+            ])
 
-    if st.button("Identify the objects"):
-        st.success("Analyzing image...")
-        vision_model = genai.GenerativeModel('gemini-1.5-flash')
-        response = vision_model.generate_content([
-            "From the image, list all recognizable food items along with an estimated calorie count for a typical serving. Format the result as a table with two columns: Food Item and Estimated Calories.",
-            image
-        ])
-        
-        st.write("### Food Items and Estimated Calories:")
-        st.markdown(response.text)
-        st.success("Thanks for visiting 🤩!!")
-        st.info("Upload another image if you'd like to try again 😄!")
+            st.write("### Food Items and Estimated Calories:")
+            st.markdown(response.text)
+            st.success("Thanks for visiting 🤩!!")
+            st.info("Upload another image if you'd like to try again 😄!")
+    else:
+        st.info("Please enable the camera and take a picture first.")
