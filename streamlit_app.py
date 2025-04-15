@@ -4,19 +4,25 @@ from datetime import date
 import os
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import LabelEncoder
+from statsmodels.tsa.arima.model import ARIMA
+import matplotlib.pyplot as plt
 
 # Set up page configuration
 st.set_page_config(page_title="Survei Nutrisi Harian", layout="centered")
 st.title("📝 Survei Nutrisi Harian")
 
+tab1, tab2, tab3 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori"])
 
-tab1, tab2 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset"])
 filename = "data_survei_nutrisi.csv"
 
 with tab1:
     with st.form("nutrition_survey"):
         st.header("1. Informasi Dasar")
         nim = st.text_input("NIM", max_chars=11, placeholder="Nomor Induk Mahasiswa!")  # Input NIM
+        # Check if NIM is provided
+        if not nim:
+            st.error("NIM is required!")
+        
         age = st.number_input("Usia", min_value=20, max_value=100, step=1)
         gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
         weight = st.number_input("Berat Badan (kg)", min_value=70.0)
@@ -42,9 +48,9 @@ with tab1:
 
         submit = st.form_submit_button("Kirim Jawaban")
 
-        if submit:
+        if nim and submit:
             st.success("🎉 Jawaban berhasil disimpan. Terima kasih!")
-
+            
             # Data yang baru diinput pengguna
             total_calories = (
                 10 * weight +
@@ -135,7 +141,7 @@ with tab1:
                     sayur * sayur_calories_per_serving +
                     buah * buah_calories_per_serving
                 )
-
+            
             # Tampilkan hasil prediksi
             st.write(f"🔍 Prediksi kebutuhan kalori Anda (Regresi Linear): **{int(predicted_calories)} kcal/hari**")
 
@@ -154,22 +160,20 @@ with tab1:
             )
             st.write(f"📊 Total kalori Anda (Rumus Tetap): **{int(fixed_calories)} kcal/hari**")
 
-            # Tampilkan data yang disimpan hari ini
-            df_input["Kalori (Prediksi)"] = int(predicted_calories)
-            st.subheader("📄 Data yang disimpan:")
-            st.dataframe(df_input)
 
 with tab2:
     st.subheader("📊 Dataset Survei Nutrisi")
 
-    # Membuat expander untuk input PIN dan tombol reset
+    # Expander untuk reset dataset
     with st.expander("🔒 Reset Dataset (Masukkan PIN)"):
-        reset_pin = st.text_input("Masukkan PIN untuk Reset Dataset", type="password")
+        reset_pin = st.text_input("Masukkan PIN", type="password", placeholder="Masukkan PIN rahasia...")
 
-        if st.button("Reset Dataset"):
-            correct_pin = "RAFA"  # Define your PIN here
+        col1, col2 = st.columns([1, 4])
+        with col1:
+            reset_click = st.button("Reset")
+        if reset_click:
+            correct_pin = "RAFA"
             if reset_pin == correct_pin:
-                # Check if the file exists and delete it to reset
                 if os.path.exists(filename):
                     os.remove(filename)
                     st.success("✅ Dataset berhasil di-reset.")
@@ -178,10 +182,76 @@ with tab2:
             else:
                 st.error("❌ PIN salah. Coba lagi.")
 
-    # Display the dataset if it exists
+    # Tampilkan dataset jika ada
     if os.path.exists(filename):
         df_all = pd.read_csv(filename)
-        st.dataframe(df_all)
-        st.download_button("⬇️ Unduh Dataset", data=df_all.to_csv(index=False), file_name="data_survei_nutrisi.csv", mime="text/csv")
-    else:
-        st.info("Belum ada data yang dikumpulkan.")
+        st.dataframe(df_all, use_container_width=True, hide_index=True)
+
+        st.download_button(
+            label="Unduh Dataset sebagai CSV",
+            data=df_all.to_csv(index=False),
+            file_name="data_survei_nutrisi.csv",
+            mime="text/csv"
+        )
+
+with tab3:
+    st.markdown("---")
+    st.subheader("📈 Prediksi Pola Kalori dengan ARIMA")
+    
+    if os.path.exists(filename):
+        df_all = pd.read_csv(filename)
+        df_all['Tanggal'] = pd.to_datetime(df_all['Tanggal'])
+
+        if len(df_all["NIM"].unique()) > 0:
+            selected_nim = st.selectbox("🔍 Pilih NIM untuk Diprediksi", df_all["NIM"].unique())
+            df_nim = df_all[df_all["NIM"] == selected_nim].copy()
+
+            if not df_nim.empty and len(df_nim) >= 5:
+                df_nim = df_nim.sort_values(by="Tanggal").reset_index(drop=True)
+                kalori_series = df_nim["Kalori"]
+                kalori_series.index = range(1, len(kalori_series) + 1)
+
+                st.line_chart(kalori_series.rename("Kalori per Entry"))
+
+                with st.expander("⚙️ Atur Parameter ARIMA (opsional)"):
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        p = st.number_input("ARIMA p", min_value=0, max_value=5, value=1)
+                    with col2:
+                        d = st.number_input("ARIMA d", min_value=0, max_value=2, value=1)
+                    with col3:
+                        q = st.number_input("ARIMA q", min_value=0, max_value=5, value=1)
+                    with col4:
+                        future_steps = st.number_input("Jumlah Prediksi", min_value=1, max_value=30, value=5)
+
+                try:
+                    model = ARIMA(kalori_series, order=(p, d, q))
+                    model_fit = model.fit()
+                    forecast = model_fit.forecast(steps=future_steps)
+
+                    forecast_index = range(len(kalori_series) + 1, len(kalori_series) + 1 + future_steps)
+                    forecast_series = pd.Series(forecast, index=forecast_index)
+
+                    st.markdown("### 📊 Visualisasi Prediksi Kalori")
+                    fig, ax = plt.subplots()
+                    kalori_series.plot(ax=ax, label="Kalori Historis", marker='o')
+                    forecast_series.plot(ax=ax, label="Prediksi", marker='x', color="red")
+                    ax.set_xlabel("Entry ke-")
+                    ax.set_ylabel("Kalori")
+                    ax.legend()
+                    st.pyplot(fig)
+
+                    forecast_df = pd.DataFrame({
+                        "Entry ke-": forecast_index,
+                        "Prediksi Kalori": forecast
+                    })
+                    st.dataframe(forecast_df, use_container_width=True)
+
+                except Exception as e:
+                    st.error(f"❌ Terjadi kesalahan saat menjalankan ARIMA: {e}")
+            elif len(df_nim) < 5:
+                st.warning("⚠️ NIM ini belum memiliki cukup data untuk prediksi. Minimal 5 entri diperlukan.")
+            else:
+                st.info("ℹ️ Tidak ada data yang tersedia untuk NIM yang dipilih.")
+        else:
+            st.info("ℹ️ Belum ada data NIM yang tersedia.")

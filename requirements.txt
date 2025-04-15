@@ -1,1 +1,8 @@
 streamlit
+pandas
+scikit-learn
+statsmodels
+matplotlib
+google-generativeai
+Pillow
+dotenv
