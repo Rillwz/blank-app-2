@@ -23,10 +23,10 @@ with tab1:
         if not nim:
             st.error("NIM is required!")
         
-        age = st.number_input("Usia", min_value=20, max_value=100, step=1)
+        age = st.number_input("Usia", max_value=100, step=1)
         gender = st.selectbox("Jenis Kelamin", ["Laki-laki", "Perempuan"])
-        weight = st.number_input("Berat Badan (kg)", min_value=70.0)
-        height = st.number_input("Tinggi Badan (cm)", min_value=170.0)
+        weight = st.number_input("Berat Badan (kg)")
+        height = st.number_input("Tinggi Badan (cm)")
 
         st.header("2. Frekuensi Konsumsi Harian (Per Hari)")
         nasi = st.slider("🍚 Konsumsi Nasi", 0, 5, 2)
