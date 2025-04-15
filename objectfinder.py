@@ -9,9 +9,6 @@ from dotenv import load_dotenv, dotenv_values  # we can use load_dotenv or doten
 
 load_dotenv()
 
-enable = st.checkbox("Enable camera")
-picture = st.camera_input("Take a picture", disabled=not enable)
-
 # print(os.getenv("MY_SECRET_KEY"))
 
 genai.configure(api_key="AIzaSyDn_CGmV5WeE3bu6oSrVDzcen67bqPEhAg") 
@@ -37,7 +34,6 @@ def main():
     with st.expander("Disclaimer ⚠️", expanded=False):
        st.markdown(disclaimer_message)
     
-
     # Upload image through Streamlit
     uploaded_image = st.file_uploader("Choose an image ...", type=["jpg", "jpeg", "png"])
 

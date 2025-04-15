@@ -7,11 +7,31 @@ from sklearn.preprocessing import LabelEncoder
 from statsmodels.tsa.arima.model import ARIMA
 import matplotlib.pyplot as plt
 
+from PIL import Image
+
+import os
+
+import google.generativeai as genai
+
+from dotenv import load_dotenv, dotenv_values  # we can use load_dotenv or dotenv_values both perform the same task
+
+load_dotenv()
+
+genai.configure(api_key="AIzaSyDn_CGmV5WeE3bu6oSrVDzcen67bqPEhAg") 
+
 # Set up page configuration
 st.set_page_config(page_title="EatWise", layout="centered")
 st.title("📝 EatWiseEveryday")
 
-tab1, tab2, tab3 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori"])
+# Set up the model
+generation_config = {
+  "temperature": 0.9,
+  "top_p": 0.95,
+  "top_k": 40,
+  "max_output_tokens": 1024,
+}
+
+tab1, tab2, tab3, tab4 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori", "📷 Find Calories"])
 
 filename = "data_survei_nutrisi.csv"
 
@@ -255,3 +275,47 @@ with tab3:
                 st.info("ℹ️ Tidak ada data yang tersedia untuk NIM yang dipilih.")
         else:
             st.info("ℹ️ Belum ada data NIM yang tersedia.")
+
+with tab4:
+    
+    st.title("Find Object Calories 🔍")
+    
+    disclaimer_message = """This is a object detector model so preferably use images containing different objects,tools... for best results 🙂"""
+
+    # Hide the disclaimer initially
+    st.write("")
+
+    # Show the disclaimer if the button is clicked
+    with st.expander("Disclaimer ⚠️", expanded=False):
+       st.markdown(disclaimer_message)
+    
+    # Upload image through Streamlit
+    uploaded_image = st.file_uploader("Choose an image ...", type=["jpg", "jpeg", "png"])
+
+    if uploaded_image is not None:
+        # Display the uploaded image
+        st.image(uploaded_image, caption="Uploaded Image.", use_container_width=True)
+
+        # Process the image (example: get image dimensions) buat dengan Camera
+        #image = Image.open(picture)
+
+        # Process the image (example: get image dimensions) buat dengan Camera
+        image = Image.open(uploaded_image)
+
+        if st.button("Identify the objects"):
+
+            st.success("Analyzing image...")
+
+            vision_model = genai.GenerativeModel('gemini-1.5-flash')
+
+            response = vision_model.generate_content([
+                "From the image, list all recognizable food items along with an estimated calorie count for a typical serving. Format the result as a table with two columns: Food Item and Estimated Calories.",
+                image
+            ])
+            
+            st.write("### Food Items and Estimated Calories:")
+            st.markdown(response.text)
+
+            st.success("Thanks for visiting 🤩!!")
+            st.info("Upload another image if you'd like to try again 😄!")
+
