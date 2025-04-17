@@ -31,7 +31,7 @@ generation_config = {
   "max_output_tokens": 1024,
 }
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori", "📷 Find Calories", "📷 Find Calories"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🧾 Isi Survei", "📊 Lihat Dataset", "📈 Prediksi Pola Kalori", "📷 Find Calories", "Camera Calories"])
 
 filename = "data_survei_nutrisi.csv"
 
